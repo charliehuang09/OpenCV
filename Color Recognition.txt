@@ -1,0 +1,62 @@
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
+#include <iostream>
+
+using namespace cv;
+using namespace std;
+
+///////////////  Color Detection  //////////////////////
+///
+
+Mat draw_cross(Mat img, Point pt){
+    rectangle(img, Point(pt.x, 0), Point(pt.x, 704), Scalar(255, 255, 255), FILLED);
+    rectangle(img, Point(0, pt.y), Point(1247, pt.y), Scalar(255, 255, 255), FILLED);
+    return img;
+}
+
+Point find_avg(Mat input){
+    unsigned long long int count = 0;
+    unsigned long long int x = 0;
+    unsigned long long int y = 0;
+    Point output (0,0);
+    Mat img = input;
+            
+    for (int i = 0; i < img.rows; i++){
+        for (int j = 0; j < img.cols; j++){
+            if (input.at<uchar>(i,j) == 255){
+                y += i;
+                x += j;
+                count++;
+            }
+        }
+    }
+    output.x = x / count;
+    output.y = y / count;
+    return output;
+}
+
+int main() {
+    VideoCapture permission(0);
+    waitKey(2000);
+    VideoCapture cap(0);
+    Mat img;
+    Mat imgHSV, mask, mymask, myerode, myoutput, output;
+    Mat kernel = getStructuringElement(MORPH_RECT, Size(11,11));
+    while (true) {
+        cap.read(img);
+        cvtColor(img, imgHSV, COLOR_BGR2HSV);
+        Scalar mylower(21, 126, 112);
+        Scalar myupper(57, 159, 255);
+        inRange(imgHSV, mylower, myupper, mymask);
+        
+        erode(mymask, myerode, kernel);
+        
+        Point pt = find_avg(myerode);
+        output = draw_cross(img, pt);
+        imshow("erode", myerode);
+        imshow("output", output);
+        
+        waitKey(1);
+    }
+}
